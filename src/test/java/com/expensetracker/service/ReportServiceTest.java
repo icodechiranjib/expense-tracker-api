@@ -83,7 +83,7 @@ public class ReportServiceTest {
         Expense expense2 = new Expense(2L, 200.0, "Dinner", "Food", LocalDate.of(2023, 6, 2), user);
 
         when(userRepository.findById(userId)).thenReturn(Optional.of(user));
-        when(expenseRepository.findByUser(user)).thenReturn(Arrays.asList(expense1, expense2));
+        when(expenseRepository.findAllByUser(user)).thenReturn(Arrays.asList(expense1, expense2));
 
         Map<String, Map<String, Double>> report = reportService.getMonthlyReport(userId);
 

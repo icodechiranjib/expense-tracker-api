@@ -19,6 +19,10 @@ import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 
 import com.expensetracker.dto.ExpenseRequest;
 import com.expensetracker.dto.ExpenseResponse;
@@ -86,20 +90,28 @@ public class ExpenseServiceTest {
     }
 
     @Test
-    void testGetUserExpenses() {
+    void testGetUserExpensesWithPagination() {
         Long userId = 1L;
         User user = new User();
         user.setId(userId);
-        Expense expense = new Expense(1L, 100.0, "Lunch", "Food", LocalDate.now(), user);
+
+        Expense expense1 = new Expense(1L, 100.0, "Lunch", "Food", LocalDate.now(), user);
+        Expense expense2 = new Expense(2L, 200.0, "Dinner", "Food", LocalDate.now(), user);
+
+        Pageable pageable = PageRequest.of(0, 2);
+        Page<Expense> expensePage = new PageImpl<>(Arrays.asList(expense1, expense2), pageable, 2);
 
         when(userRepository.findById(userId)).thenReturn(Optional.of(user));
-        when(expenseRepository.findByUser(user)).thenReturn(Arrays.asList(expense));
+        when(expenseRepository.findAllByUser(user, pageable)).thenReturn(expensePage);
 
-        List<ExpenseResponse> responses = expenseService.getUserExpenses(userId);
+        Page<ExpenseResponse> responses = expenseService.getUserExpenses(userId, pageable.getPageNumber(), pageable.getPageSize());
 
         assertNotNull(responses);
-        assertEquals(1, responses.size());
-        assertEquals(expense.getAmount(), responses.get(0).getAmount());
+        assertEquals(2, responses.getSize());
+        List<ExpenseResponse> responseList = responses.getContent();
+        assertEquals(expense1.getAmount(), responseList.get(0).getAmount());
+        assertEquals(expense2.getAmount(), responseList.get(1).getAmount());
+        verify(expenseRepository, times(1)).findAllByUser(user, pageable);
     }
 
     @Test

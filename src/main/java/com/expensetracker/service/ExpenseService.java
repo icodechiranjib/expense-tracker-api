@@ -1,5 +1,13 @@
 package com.expensetracker.service;
 
+import java.time.LocalDate;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.stereotype.Service;
+
 import com.expensetracker.dto.ExpenseRequest;
 import com.expensetracker.dto.ExpenseResponse;
 import com.expensetracker.entity.Expense;
@@ -8,12 +16,6 @@ import com.expensetracker.exception.BadRequestException;
 import com.expensetracker.exception.ResourceNotFoundException;
 import com.expensetracker.repository.ExpenseRepository;
 import com.expensetracker.repository.UserRepository;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Service;
-
-import java.time.LocalDate;
-import java.util.List;
-import java.util.stream.Collectors;
 
 @Service
 public class ExpenseService {
@@ -38,9 +40,12 @@ public class ExpenseService {
         return toResponse(saved);
     }
 
-    public List<ExpenseResponse> getUserExpenses(Long userId) {
-        User user = userRepository.findById(userId).orElseThrow(() -> new ResourceNotFoundException("User not found"));
-        return expenseRepository.findByUser(user).stream().map(this::toResponse).collect(Collectors.toList());
+    public Page<ExpenseResponse> getUserExpenses(Long userId, int page, int size) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+        Pageable pageable = PageRequest.of(page, size);
+        return expenseRepository.findAllByUser(user, pageable)
+                .map(this::toResponse);
     }
 
     public ExpenseResponse updateExpense(Long id, ExpenseRequest request, Long userId) {
@@ -52,7 +57,7 @@ public class ExpenseService {
 
         expense.setAmount(request.getAmount());
         // Update description only if present
-        if(request.getDescription() != null) {
+        if (request.getDescription() != null) {
             expense.setDescription(request.getDescription());
         }
         expense.setCategory(request.getCategory());

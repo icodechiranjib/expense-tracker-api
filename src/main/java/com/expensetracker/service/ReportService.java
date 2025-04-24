@@ -36,10 +36,15 @@ public class ReportService {
     }
 
     public Map<String, Map<String, Double>> getMonthlyReport(Long userId) {
-        return expenseRepository.findByUser(getUser(userId))
-                .stream()
+
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+
+        return expenseRepository.findAllByUser(user).stream()
                 .collect(Collectors.groupingBy(
                         e -> e.getDate().getYear() + "-" + String.format("%02d", e.getDate().getMonthValue()),
-                        Collectors.groupingBy(Expense::getCategory, Collectors.summingDouble(Expense::getAmount))));
+                        Collectors.groupingBy(
+                                Expense::getCategory,
+                                Collectors.summingDouble(Expense::getAmount))));
     }
 }
