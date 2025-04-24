@@ -1,0 +1,40 @@
+# Maven target directory
+/target/
+
+# IntelliJ IDEA files
+/.idea/
+/*.iml
+
+# VSCode settings
+/.vscode/
+
+# Logs
+*.log
+logs/
+
+# OS generated files
+.DS_Store
+Thumbs.db
+
+# Java compiled files
+*.class
+
+# Environment files
+.env
+
+# JAR/WAR files
+*.jar
+*.war
+
+# Temporary files
+*.tmp
+*.swp
+*.swo
+
+# Lombok generated files
+lombok.config
+
+# Maven wrapper files
+.mvn/
+mvnw
+mvnw.cmd
