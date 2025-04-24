@@ -15,6 +15,7 @@ import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 
 import com.expensetracker.dto.LoginRequest;
 import com.expensetracker.dto.LoginResponse;
@@ -42,6 +43,9 @@ class AuthServiceTest {
     @Mock
     private JwtUtil jwtUtil;
 
+    @Mock
+    private BCryptPasswordEncoder passwordEncoder;
+
     @BeforeEach
     void setUp() {
         MockitoAnnotations.openMocks(this);
@@ -63,12 +67,15 @@ class AuthServiceTest {
 
         when(userRepository.existsByEmail(request.getEmail())).thenReturn(false);
         when(roleRepository.findByName(request.getRole())).thenReturn(Optional.of(role));
+        when(passwordEncoder.encode(request.getPassword())).thenReturn("encodedPassword");
+        when(userRepository.findByEmail(request.getEmail())).thenReturn(Optional.empty());
         when(userRepository.save(any(User.class))).thenReturn(user);
 
         RegisterResponse response = authService.register(request);
 
         assertEquals("User registered successfully", response.getMessage());
         assertEquals("testuser@test.com", response.getEmail());
+        verify(passwordEncoder).encode(request.getPassword());
         verify(userRepository).save(any(User.class));
     }
 
@@ -109,15 +116,17 @@ class AuthServiceTest {
 
         User user = new User();
         user.setEmail("testuser@test.com");
-        user.setPassword("password123");
+        user.setPassword("encoded-password");
 
         when(userRepository.findByEmail(request.getEmail())).thenReturn(Optional.of(user));
+        when(passwordEncoder.matches(request.getPassword(), user.getPassword())).thenReturn(true);
         when(jwtUtil.generateToken(user.getEmail())).thenReturn("mocked-jwt-token");
 
         LoginResponse response = authService.login(request);
 
         assertEquals("mocked-jwt-token", response.getToken());
         verify(jwtUtil).generateToken(user.getEmail());
+        verify(passwordEncoder).matches(request.getPassword(), user.getPassword());
     }
 
     @Test
@@ -137,7 +146,7 @@ class AuthServiceTest {
         LoginRequest request = new LoginRequest();
         request.setEmail("testuser@test.com");
         request.setPassword("wrongpassword");
-        
+
         User user = new User();
         user.setEmail("testuser@test.com");
         user.setPassword("password123");

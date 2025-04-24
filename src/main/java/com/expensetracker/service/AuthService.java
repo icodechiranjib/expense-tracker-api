@@ -1,6 +1,7 @@
 package com.expensetracker.service;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import com.expensetracker.dto.LoginRequest;
@@ -24,6 +25,8 @@ public class AuthService {
     private RoleRepository roleRepository;
     @Autowired
     private JwtUtil jwtUtil;
+    @Autowired
+    private BCryptPasswordEncoder passwordEncoder;
 
     public RegisterResponse register(RegisterRequest request) {
         if (userRepository.existsByEmail(request.getEmail())) {
@@ -36,7 +39,7 @@ public class AuthService {
         User user = new User();
         user.setName(request.getName());
         user.setEmail(request.getEmail());
-        user.setPassword(request.getPassword());
+        user.setPassword(passwordEncoder.encode(request.getPassword()));
         user.setRole(requestedRole);
 
         User saved = userRepository.save(user);
@@ -47,7 +50,7 @@ public class AuthService {
         User user = userRepository.findByEmail(request.getEmail())
                 .orElseThrow(() -> new BadRequestException("Invalid email or password"));
 
-        if (!user.getPassword().equals(request.getPassword())) {
+        if (!passwordEncoder.matches(request.getPassword(), user.getPassword())) {
             throw new BadRequestException("Invalid email or password");
         }
 
